@@ -3,19 +3,19 @@ import 'package:assets_audio_player_example/player/PlayingControlsSmall.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic/flutter_neumorphic.dart';
 import 'package:rxdart/rxdart.dart';
-
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'player/PositionSeekWidget.dart';
 import 'player/model/MyAudio.dart';
 
 void main() => runApp(
-      NeumorphicTheme(
-        theme: NeumorphicThemeData(
-          intensity: 0.8,
-          lightSource: LightSource.topLeft,
-        ),
-        child: MyApp(),
-      ),
-    );
+  NeumorphicTheme(
+    theme: NeumorphicThemeData(
+      intensity: 0.8,
+      lightSource: LightSource.topLeft,
+    ),
+    child: MyApp(),
+  ),
+);
 
 class MyApp extends StatefulWidget {
   @override
@@ -29,17 +29,17 @@ class _MyAppState extends State<MyApp> {
         audio: Audio.network(
             'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/Music_for_Video/springtide/Sounds_strange_weird_but_unmistakably_romantic_Vol1/springtide_-_03_-_We_Are_Heading_to_the_East.mp3'),
         imageUrl:
-            'https://image.shutterstock.com/image-vector/pop-music-text-art-colorful-600w-515538502.jpg'),
+        'https://image.shutterstock.com/image-vector/pop-music-text-art-colorful-600w-515538502.jpg'),
     MyAudio(
         name: 'Rock',
         audio: Audio('assets/audios/rock.mp3'),
         imageUrl:
-            'https://static.radio.fr/images/broadcasts/cb/ef/2075/c300.png'),
+        'https://static.radio.fr/images/broadcasts/cb/ef/2075/c300.png'),
     MyAudio(
         name: 'Country',
         audio: Audio('assets/audios/country.mp3'),
         imageUrl:
-            'https://images-na.ssl-images-amazon.com/images/I/81M1U6GPKEL._SL1500_.jpg'),
+        'https://images-na.ssl-images-amazon.com/images/I/81M1U6GPKEL._SL1500_.jpg'),
     MyAudio(
         name: 'Electronic',
         audio: Audio('assets/audios/electronic.mp3'),
@@ -48,12 +48,12 @@ class _MyAppState extends State<MyApp> {
         name: 'HipHop',
         audio: Audio('assets/audios/hiphop.mp3'),
         imageUrl:
-            'https://beyoudancestudio.ch/wp-content/uploads/2019/01/apprendre-danser.hiphop-1.jpg '),
+        'https://beyoudancestudio.ch/wp-content/uploads/2019/01/apprendre-danser.hiphop-1.jpg '),
     MyAudio(
         name: 'Pop',
         audio: Audio('assets/audios/pop.mp3'),
         imageUrl:
-            'https://image.shutterstock.com/image-vector/pop-music-text-art-colorful-600w-515538502.jpg'),
+        'https://image.shutterstock.com/image-vector/pop-music-text-art-colorful-600w-515538502.jpg'),
     MyAudio(
         name: 'Instrumental',
         audio: Audio('assets/audios/instrumental.mp3'),
@@ -99,9 +99,9 @@ class _MyAppState extends State<MyApp> {
                 children: audios
                     .map(
                       (e) => PlayerWidget(
-                        myAudio: e,
-                      ),
-                    )
+                    myAudio: e,
+                  ),
+                )
                     .toList(),
               ),
             ),
@@ -143,7 +143,7 @@ class _PlayerWidgetState extends State<PlayerWidget> {
               margin: EdgeInsets.all(8),
               style: NeumorphicStyle(
                 boxShape:
-                    NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
+                NeumorphicBoxShape.roundRect(BorderRadius.circular(8)),
               ),
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -206,13 +206,30 @@ class _PlayerWidgetState extends State<PlayerWidget> {
                           AsyncSnapshot<RealtimePlayingInfos> snapshot) {
                         if (!snapshot.hasData) return const SizedBox();
                         final infos = snapshot.data!;
-                        return PositionSeekWidget(
-                          seekTo: (to) {
-                            _assetsAudioPlayer.seek(to);
-                          },
-                          duration: infos.duration,
-                          currentPosition: infos.currentPosition,
-                        );
+                        return
+                          Column(
+                              children: [
+                                ProgressBar(
+                                  progress: infos.currentPosition,
+                                  total: Duration(seconds: 84),
+                                  onSeek: (duration) => _assetsAudioPlayer.seek(duration),
+                                  thumbRadius: 15,
+                                  thumbColor: Color(0xffeca564),
+                                  progressBarColor: Color(0xffeca564),
+                                  baseBarColor: Color(0xffeca564).withOpacity(0.24),
+                                  barHeight: 5,
+                                  timeLabelLocation: TimeLabelLocation.below,
+                                ),
+
+                                PositionSeekWidget(
+                                  seekTo: (to) {
+                                    _assetsAudioPlayer.seek(to);
+                                  },
+                                  duration: infos.duration,
+                                  currentPosition: infos.currentPosition,
+                                ),
+                              ]);
+
                       }),
                 ],
               ),
