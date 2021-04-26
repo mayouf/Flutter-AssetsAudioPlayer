@@ -18,6 +18,7 @@ dependencies:
   http: ^0.13.0
   provider: ^5.0.0
   file: ^6.1.0
+  audio_video_progress_bar: ^0.3.2
 
   # flutter_audio_recorder: ^0.5.5
   flutter_audio_recorder:
