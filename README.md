@@ -18,6 +18,6 @@ It compares two progress Bar:
 You check on the label Duration, you will immediztely notice the issue: they are stuck on the same duration everytime, which is here 01:24
 
 
-<img src="https://user-images.githubusercontent.com/5865600/116107484-5deb7180-a6b3-11eb-8d8f-1ad5eb66e600.png" width="400">
+<img src="https://user-images.githubusercontent.com/5865600/116122550-3a7bf300-a6c2-11eb-979e-c8b6c9c4b6e3.png" width="400">
 
 Im running the project on Android 30 and 29.
