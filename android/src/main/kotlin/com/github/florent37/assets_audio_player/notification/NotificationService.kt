@@ -1,5 +1,6 @@
 package com.github.florent37.assets_audio_player.notification
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.PendingIntent
@@ -23,7 +24,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.app.PendingIntent.FLAG_IMMUTABLE
-import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.annotation.RequiresApi
 import com.github.florent37.assets_audio_player.AssetsAudioPlayerPlugin
@@ -37,7 +37,7 @@ class NotificationService : Service() {
 
         const val EXTRA_PLAYER_ID = "playerId"
         const val EXTRA_NOTIFICATION_ACTION = "notificationAction"
-        const val TRACK_ID = "trackID";
+        const val TRACK_ID = "trackID"
 
         const val manifestIcon = "assets.audio.player.notification.icon"
         const val manifestIconPlay = "assets.audio.player.notification.icon.play"
@@ -114,8 +114,19 @@ class NotificationService : Service() {
         }
     }
 
+    private lateinit var mediaSession: MediaSessionCompat
+
+
     @RequiresApi(Build.VERSION_CODES.ECLAIR)
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        // Start with an empty notification immediately
+        val emptyNotification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(getSmallIcon(this))
+            .setContentTitle("Audio Player")
+            .setContentText("Preparing...")
+            .build()
+        startForeground(NOTIFICATION_ID, emptyNotification)
+
         if (intent.action == Intent.ACTION_MEDIA_BUTTON) {
             MediaButtonsReceiver.getMediaSessionCompat(applicationContext).let {
                 MediaButtonReceiver.handleIntent(it, intent)
@@ -215,9 +226,10 @@ class NotificationService : Service() {
         }
     }
 
+    @SuppressLint("MissingPermission")
     @RequiresApi(Build.VERSION_CODES.ECLAIR)
     private fun displayNotification(action: NotificationAction.Show, bitmap: Bitmap?) {
-        createNotificationChannel()
+//        createNotificationChannel()
         val mediaSession = MediaButtonsReceiver.getMediaSessionCompat(applicationContext)
 
         val notificationSettings = action.notificationSettings
@@ -232,10 +244,9 @@ class NotificationService : Service() {
         )
 
         val toggleIntent = createReturnIntent(forAction = NotificationAction.ACTION_TOGGLE, forPlayer = action.playerId, audioMetas = action.audioMetas)
-                .putExtra(EXTRA_NOTIFICATION_ACTION, action.copyWith(
-                        isPlaying = !action.isPlaying
-                ))
-        val pendingToggleIntent = PendingIntent.getBroadcast(this, 0, toggleIntent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+                .putExtra(EXTRA_NOTIFICATION_ACTION, action.copyWith(isPlaying = !action.isPlaying))
+        val pendingToggleIntent = PendingIntent.getBroadcast(
+        this, 0, toggleIntent, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
         MediaButtonReceiver.handleIntent(mediaSession, toggleIntent)
 
         val context = this
@@ -282,7 +293,10 @@ class NotificationService : Service() {
                 .apply {
                     if (notificationSettings.prevEnabled) {
                         addAction(getPrevIcon(context, action.notificationSettings.previousIcon), "Previous",
-                                PendingIntent.getBroadcast(context, 0, createReturnIntent(forAction = NotificationAction.ACTION_PREV, forPlayer = action.playerId, audioMetas = action.audioMetas), FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+                                PendingIntent.getBroadcast(
+                                context, 0,
+                                createReturnIntent(forAction = NotificationAction.ACTION_PREV, forPlayer = action.playerId, audioMetas = action.audioMetas),
+                                FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
                         )
                     }
                 }
@@ -299,16 +313,20 @@ class NotificationService : Service() {
                 //next
                 .apply {
                     if (notificationSettings.nextEnabled) {
-                        addAction(getNextIcon(context, action.notificationSettings.nextIcon), "Next", PendingIntent.getBroadcast(context, 0,
-                                createReturnIntent(forAction = NotificationAction.ACTION_NEXT, forPlayer = action.playerId, audioMetas = action.audioMetas), FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+                        addAction(getNextIcon(context, action.notificationSettings.nextIcon), "Next",
+                        PendingIntent.getBroadcast(context, 0,
+                                createReturnIntent(forAction = NotificationAction.ACTION_NEXT, forPlayer = action.playerId, audioMetas = action.audioMetas),
+                                FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
                         )
                     }
                 }
                 //stop
                 .apply {
                     if (notificationSettings.stopEnabled) {
-                        addAction(getStopIcon(context, action.notificationSettings.stopIcon), "Stop", PendingIntent.getBroadcast(context, 0,
-                                createReturnIntent(forAction = NotificationAction.ACTION_STOP, forPlayer = action.playerId, audioMetas = action.audioMetas), FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
+                        addAction(getStopIcon(context, action.notificationSettings.stopIcon), "Stop",
+                        PendingIntent.getBroadcast(context, 0,
+                                createReturnIntent(forAction = NotificationAction.ACTION_STOP, forPlayer = action.playerId, audioMetas = action.audioMetas),
+                                FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
                         )
                     }
                 }
@@ -336,8 +354,11 @@ class NotificationService : Service() {
                         it.setSubText(action.audioMetas.album)
                     }
                 }
-                .setContentIntent(PendingIntent.getBroadcast(this, 0,
-                        createReturnIntent(forAction = NotificationAction.ACTION_SELECT, forPlayer = action.playerId, audioMetas = action.audioMetas), FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT))
+                .setContentIntent(
+                    PendingIntent.getBroadcast(
+                        this, 0,
+                        createReturnIntent(forAction = NotificationAction.ACTION_SELECT, forPlayer = action.playerId, audioMetas = action.audioMetas),
+                        FLAG_IMMUTABLE or PendingIntent.FLAG_CANCEL_CURRENT))
                 .also {
                     if (bitmap != null) {
                         it.setLargeIcon(bitmap)
@@ -346,11 +367,16 @@ class NotificationService : Service() {
                 .setShowWhen(false)
                 .build()
 
-        if (Build.VERSION.SDK_INT >= 29) {
-            startForeground(NOTIFICATION_ID, notification, FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
+        // Update the existing notification instead of calling startForeground again
+        val notificationManager = NotificationManagerCompat.from(this)
+        notificationManager.notify(NOTIFICATION_ID, notification)
+
+
+//        if (Build.VERSION.SDK_INT >= 29) {
+//            startForeground(NOTIFICATION_ID, notification, FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+//        } else {
+//            startForeground(NOTIFICATION_ID, notification)
+//        }
 
         //fix for https://github.com/florent37/Flutter-AssetsAudioPlayer/issues/139
         if (!action.isPlaying && Build.VERSION.SDK_INT >= 24) {
@@ -389,8 +415,11 @@ class NotificationService : Service() {
         hideNotif()
     }
 
+
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannel()
+        mediaSession = MediaSessionCompat(this, MEDIA_SESSION_TAG)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -399,6 +428,7 @@ class NotificationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        mediaSession.release()
     }
 
 }
